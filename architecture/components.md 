@@ -1,0 +1,105 @@
+
+### 5.3 Component responsibilities
+
+```bash
+
+# OpsNexus Components
+
+## opsnexus-agent
+
+The agent runs on monitored Linux systems.
+
+Responsibilities:
+
+- Collect CPU metrics
+- Collect memory metrics
+- Collect disk metrics
+- Collect network metrics
+- Collect system information
+- Monitor Docker
+- Execute approved automation tasks
+- Report health and telemetry
+
+## opsnexus-backend
+
+The backend is the central control plane.
+
+Responsibilities:
+
+- Authentication
+- Agent registration
+- Device/server management
+- Telemetry ingestion
+- Monitoring state
+- Automation orchestration
+- Alert processing
+- API services
+
+Technology:
+
+- Go
+
+## opsnexus-dashboard
+
+The web interface for operators.
+
+Responsibilities:
+
+- Infrastructure overview
+- Server details
+- Docker monitoring
+- Alerts
+- Automation controls
+- System health
+
+## opsnexus-common
+
+Shared contracts used by Go components.
+
+Examples:
+
+- Agent models
+- Telemetry models
+- API request/response structures
+- Event definitions
+- Error models
+
+## opsnexus-api
+
+Contains API specifications and contracts.
+
+The API repository should remain independent from backend implementation.
+
+## opsnexus-cli
+
+Command-line interface for interacting with OpsNexus.
+
+Possible operations:
+
+- Login
+- Register agent
+- List servers
+- Inspect server
+- View metrics
+- Trigger automation
+
+## opsnexus-deployment
+
+Deployment infrastructure.
+
+Examples:
+
+- Docker Compose
+- Container configurations
+- Environment templates
+- Deployment scripts
+- Production infrastructure
+
+## opsnexus-docs
+
+Central project documentation.
+
+## awesome-opsnexus
+
+Community-oriented curated resources related to OpsNexus.
+EOF
