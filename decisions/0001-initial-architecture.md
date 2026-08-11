@@ -6,38 +6,38 @@ Accepted
 
 ## Context
 
-OpsNexus requires a modular architecture capable of monitoring Linux infrastructure and Docker while supporting future infrastructure integrations.
+OpsNexus requires a modular architecture capable of monitoring Linux infrastructure while supporting future extensions (Docker, Kubernetes, Android, network devices).
 
 ## Decision
 
-OpsNexus will use separate repositories for its major components.
+OpsNexus uses separate Git repositories for its major components, each independently versioned and deployable.
 
-The backend and agent will use Go as the primary implementation language.
+The backend and agent use Go as the primary implementation language for performance, single-binary deployment, and low resource consumption.
 
-The initial MVP will focus on:
+The dashboard uses React with TypeScript for a modern, interactive real-time UI.
 
-1. Linux monitoring
-2. Docker monitoring
-3. Infrastructure automation
-4. Centralized API
-5. Web dashboard
+PostgreSQL serves as the primary data store with JSONB for flexible telemetry storage.
 
 ## Repository Architecture
 
-- opsnexus-agent
-- opsnexus-backend
-- opsnexus-dashboard
-- opsnexus-common
-- opsnexus-docs
-- opsnexus-deployment
-- opsnexus-cli
-- opsnexus-api
-- awesome-opsnexus
+| Repository | Purpose |
+|---|---|
+| `opsnexus-agent` | Linux monitoring agent |
+| `opsnexus-backend` | Go HTTP backend and API server |
+| `opsnexus-dashboard` | React + TypeScript dashboard |
+| `opsnexus-common` | Shared Go types and contracts |
+| `opsnexus-api` | OpenAPI specification |
+| `opsnexus-cli` | Command-line interface |
+| `opsnexus-deployment` | Docker and deployment infrastructure |
+| `opsnexus-docs` | Central documentation |
+| `awesome-opsnexus` | Community resources |
 
 ## Rationale
 
-Separate repositories provide clear ownership boundaries, independent development, simpler deployment, and future extensibility.
+Separate repositories provide clear ownership boundaries, independent CI/CD pipelines, simpler versioning, and future extensibility without monorepo complexity.
 
-## Future Extensions
+## Consequences
 
-The architecture should support additional monitoring and management modules without changing the core MVP architecture.
+- Cross-repository coordination is required for breaking API changes.
+- Shared types live in `opsnexus-common` and are imported as a Go module.
+- The OpenAPI contract in `opsnexus-api` serves as the single source of truth for API design.

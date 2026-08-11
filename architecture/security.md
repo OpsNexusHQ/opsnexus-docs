@@ -1,45 +1,48 @@
-
-### 5.5 Security architecture
-
-```bash
-
 # OpsNexus Security Architecture
 
-Security is a core requirement of OpsNexus because the platform can monitor infrastructure and execute automation tasks.
+Security is a core requirement of OpsNexus because the platform monitors infrastructure and can trigger notification workflows.
 
 ## Principles
 
 - Authentication is required for management operations.
-- Agents must be uniquely identified.
-- Agent communication must use encrypted transport.
-- Automation commands must be explicitly authorized.
+- Agents must be uniquely identified via registration.
+- Agent communication should use encrypted transport (HTTPS in production).
 - Secrets must never be committed to Git.
 - Environment-specific configuration must remain outside source control.
 - Logs must avoid exposing credentials or sensitive tokens.
 
-## Agent Security
+## API Authentication
 
-Each agent should have a secure identity.
+OpsNexus supports Bearer token authentication via the `Authorization` header.
 
-The backend must validate:
+- Tokens are SHA-256 hashed before storage in the `api_tokens` table.
+- Raw tokens are shown only once at creation time.
+- Authentication is controlled by `OPSNEXUS_API_AUTH_ENABLED` (default: disabled for development).
 
-- Agent identity
-- Authentication credentials
-- Request authorization
-- Request integrity
+## Role-Based Access Control (RBAC)
 
-## Automation Security
+Three roles are supported:
 
-Automation capabilities must use an allowlisted command/task model rather than unrestricted remote shell execution.
+| Role | Permissions |
+|---|---|
+| `viewer` | Read-only access to agents, telemetry, alerts |
+| `operator` | Viewer permissions + acknowledge alerts, manage rules, post comments |
+| `admin` | Full access including token management, notification channels, system configuration |
 
-## Secrets
+## Notification Security
 
-Secrets must be provided through secure environment configuration or a dedicated secrets-management mechanism.
+Webhook notifications include an HMAC-SHA256 signature in the `X-OpsNexus-Signature` header, allowing receivers to verify payload integrity and authenticity.
+
+## Secrets Management
+
+Secrets must be provided through environment variables or a dedicated secrets manager.
 
 Never commit:
 
-- API keys
-- Access tokens
-- Passwords
-- Private keys
-- Production credentials
+- API keys or tokens
+- Database connection strings with credentials
+- Private keys or certificates
+- Production `.env` files
+- Webhook secrets
+
+All repositories include `.gitignore` rules to exclude `.env`, `.pem`, `.key`, and credential files.
