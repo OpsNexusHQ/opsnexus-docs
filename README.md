@@ -42,6 +42,9 @@ Central documentation portal for **OpsNexus**, a cloud-native infrastructure mon
 - [Agent & Backend Protocol](architecture/communication.md) — Registration, telemetry payload contracts, and SSE event streaming.
 - [Security & RBAC Architecture](architecture/security.md) — Authentication middleware, token hashing, HMAC webhook verification, and RBAC rules.
 - [ADR-0001: Architectural Decisions](decisions/0001-initial-architecture.md) — Multi-repo layout, technology stack choices, and design rationale.
+- [Platform Compatibility](COMPATIBILITY.md) — Component tags, API compatibility, and supported release combinations.
+- [Engineering Audit](engineering/audits/2026-08-engineering-audit.md) — Baseline engineering audit record.
+- [P0 Verification](engineering/audits/2026-08-p0-verification.md) — Verification evidence for Phase 0 P0 findings.
 
 ---
 
