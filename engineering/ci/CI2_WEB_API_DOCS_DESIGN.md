@@ -216,7 +216,7 @@ API commands:
     sha256sum --check
     oasdiff breaking --base "$RUNNER_TEMP/baseline.yaml" --revision "$RUNNER_TEMP/revision.yaml"
 
-The oasdiff archive is downloaded into RUNNER_TEMP and verified against the release SHA256 before execution; it is not installed globally. The breaking-change job uses the explicit API repository tag v0.5.0, fetched through full history, and never compares against a floating main. Redocly lint passes the existing contract in minimal mode with 11 pre-existing warnings; no OpenAPI or schema files were changed. The bundle is written only to RUNNER_TEMP and is not committed or uploaded.
+The oasdiff archive is downloaded into RUNNER_TEMP and verified against the release SHA256 before execution; it is not installed globally. The breaking-change job verifies that the explicit API repository tag v0.5.0 resolves to commit c52c716c9d456f6314f06b1f11f71f7bc9caa654, then archives that verified commit and never compares against a floating main. Redocly lint passes the existing contract in minimal mode with 11 pre-existing warnings; no OpenAPI or schema files were changed. The bundle is written only to RUNNER_TEMP and is not committed or uploaded.
 
 Docs commands:
 
@@ -232,6 +232,8 @@ Local validation:
 - API oasdiff: blocked locally because the v1.26.1 Go module requires Go 1.26 and the local environment could not resolve GitHub to download that toolchain. The workflow uses the pinned release binary instead.
 - docs: markdownlint-cli2 0.23.2 passed with the baseline configuration. Lychee was not locally available; the attempted pinned container tag was not found.
 - CI_ARCHITECTURE.md is absent from current docs main and was not recreated.
+
+GitHub Actions are pinned to immutable reviewed commits: checkout v4.2.2, setup-node v4.4.0, and lychee-action v2.0.0.
 
 Known limitations and deferred scope:
 
