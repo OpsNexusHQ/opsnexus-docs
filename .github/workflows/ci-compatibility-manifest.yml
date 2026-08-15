@@ -1,0 +1,27 @@
+name: Compatibility Manifest
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - engineering/releases/platform-compatibility.yaml
+      - scripts/validate-platform-compatibility.rb
+      - engineering/ci/**
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  compatibility-manifest:
+    name: ci/compatibility-manifest
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Check out docs
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+
+      - name: Validate manifest and immutable refs
+        run: ruby scripts/validate-platform-compatibility.rb
