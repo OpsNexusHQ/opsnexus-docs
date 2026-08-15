@@ -80,3 +80,31 @@ approved docs location. No credentials or secrets were added.
 
 The implementation is intentionally stopped before adding incomplete module,
 contract, and deployment callers.
+
+## Blocker resolution attempt
+
+The deployment workflow now accepts:
+
+- `run_contract_assertions: boolean`, default `false`;
+- `contract_profile: contract-basic`, a fixed non-shell-injection profile.
+
+The `contract-basic` profile is implemented as
+`opsnexus-deployment/.github/scripts/ci-contract-basic.sh` and covers only
+OpenAPI-present routes: registration, agent telemetry, agent health, metrics,
+overview, alerts, and bounded SSE connection validation. It uses test-only
+data, bounded curl requests, explicit JSON assertions, and fails on any
+assertion error.
+
+The reusable workflow executes the profile after backend restart readiness and
+before its existing diagnostics/cleanup steps. This proves the lifecycle
+injection point without duplicating Compose startup or cleanup.
+
+The remaining issue is GitHub check identity: exposing both independent stable
+checks `ci/compatibility-contract` and `ci/compatibility-deployment` while
+running one reusable workflow requires either two workflow invocations (which
+creates two Compose lifecycles) or a single job with one check name. GitHub
+Actions jobs cannot publish two independent required check names from one job
+without an additional status-publishing mechanism, which would require write
+permissions and is outside the approved security model. The implementation is
+therefore still stopped rather than duplicating deployment or inventing a
+privileged status bridge.
