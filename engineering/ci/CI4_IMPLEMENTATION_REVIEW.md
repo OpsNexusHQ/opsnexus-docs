@@ -108,3 +108,26 @@ without an additional status-publishing mechanism, which would require write
 permissions and is outside the approved security model. The implementation is
 therefore still stopped rather than duplicating deployment or inventing a
 privileged status bridge.
+
+## Revised check semantics implementation
+
+The static/live split is now represented by:
+
+- `.github/compatibility/contract-basic.json`: one fixed assertion definition;
+- `ci/compatibility-contract`: static OpenAPI operation/media-type validation;
+- `ci/compatibility-deployment`: the sole live caller of reusable CI-3 with
+  `run_contract_assertions: true`;
+- `ci/compatibility-modules`: relationship checks in agent and backend.
+
+The live assertion script remains the only runtime HTTP implementation and is
+invoked inside CI-3 before its existing cleanup. No second Compose lifecycle or
+status-writing permission was introduced.
+
+## Remaining implementation limitations
+
+The module and deployment callers currently use the approved baseline refs;
+the complete PR-head substitution and base-manifest resolution still need to
+be wired through caller inputs for every repository before remote validation.
+The local Docker daemon is unavailable, so live assertions remain unexecuted
+locally. Ruby is unavailable, so the Ruby manifest validator remains unexecuted
+locally; YAML, shell, and static contract validation passed.
