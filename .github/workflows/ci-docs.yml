@@ -29,10 +29,10 @@ jobs:
           test -f COMPATIBILITY.md
           test -f engineering/audits/2026-08-engineering-audit.md
           test -f engineering/audits/2026-08-p0-verification.md
-          rg -q 'opsnexus-dashboard' .
-          rg -q 'opsnexus-api' .
-          rg -q 'opsnexus-docs' .
-          rg -q 'v0\.5\.0' COMPATIBILITY.md
+          grep -Rqs --exclude-dir=.git 'opsnexus-dashboard' .
+          grep -Rqs --exclude-dir=.git 'opsnexus-api' .
+          grep -Rqs --exclude-dir=.git 'opsnexus-docs' .
+          grep -q 'v0\.5\.0' COMPATIBILITY.md
 
   link-check:
     name: ci/link-check

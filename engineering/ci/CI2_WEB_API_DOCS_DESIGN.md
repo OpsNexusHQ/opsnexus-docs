@@ -65,7 +65,7 @@ Proposed commands:
 
     npx --yes @redocly/cli@2.46.1 lint api/openapi.yaml --config redocly.yaml
     npx --yes @redocly/cli@2.46.1 bundle api/openapi.yaml --output /tmp/opsnexus-openapi.bundle.yaml --ext yaml
-    oasdiff breaking --base /tmp/opsnexus-openapi-main.yaml --revision /tmp/opsnexus-openapi.bundle.yaml
+    oasdiff breaking /tmp/opsnexus-openapi-main.yaml /tmp/opsnexus-openapi.bundle.yaml
 
 The implementation must decide whether the Redocly configuration is supplied inline or as a committed config file; if a config file is needed, that is an explicit follow-up repository change and not part of this design-only branch. The bundle is a temporary CI artifact or workspace file, never a committed generated schema. Breaking detection is future work until a trusted main baseline is checked out or downloaded and the repository establishes its compatibility policy.
 

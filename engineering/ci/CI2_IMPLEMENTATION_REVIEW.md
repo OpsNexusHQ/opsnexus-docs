@@ -31,3 +31,7 @@ External link checking remains network-dependent by design and retains bounded r
 ## Final decision
 
 READY TO PUSH
+
+## Remote CI correction
+
+The first remote CI run found two command-level issues: oasdiff 1.26.1 requires positional base and revision arguments, and the GitHub-hosted runner did not provide ripgrep. The API workflow now uses positional oasdiff arguments, and the docs consistency checks now use the runner-provided POSIX grep command. Both checks retain strict failure behavior.
