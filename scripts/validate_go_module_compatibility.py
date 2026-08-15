@@ -56,16 +56,19 @@ def validate_consumer(source: Path, common_sha: str, env: dict[str, str]) -> Non
         work = Path(temp) / source.name
         shutil.copytree(source, work, ignore=shutil.ignore_patterns(".git", "node_modules", "dist"))
         download = run(["go", "mod", "download", "-json", f"{MODULE}@{common_sha}"], work, env)
+        download_data = json.loads(download.stdout)
         downloaded_hash = origin_hash(download.stdout, "go mod download")
+        selected_version = download_data.get("Version")
         if downloaded_hash != common_sha.lower():
             fail(f"{source.name} downloaded common {downloaded_hash}, expected {common_sha}")
 
         run(["go", "get", f"{MODULE}@{common_sha}"], work, env)
         resolved = run(["go", "mod", "download", "-json", MODULE], work, env)
-        resolved_hash = origin_hash(resolved.stdout, "post-go-get go mod download")
-        if resolved_hash != common_sha.lower():
-            fail(f"{source.name} resolved common {resolved_hash}, expected {common_sha}")
-        print(f"ci/compatibility-modules: {source.name} consumes {MODULE} commit {resolved_hash}")
+        resolved_data = json.loads(resolved.stdout)
+        resolved_version = resolved_data.get("Version")
+        if resolved_version != selected_version:
+            fail(f"{source.name} resolved common version {resolved_version}, expected {selected_version} for {common_sha}")
+        print(f"ci/compatibility-modules: {source.name} consumes {MODULE} commit {downloaded_hash} ({resolved_version})")
         run(["go", "mod", "verify"], work, env)
         run(["go", "test", "./..."], work, env)
 
