@@ -48,9 +48,10 @@ components.each do |name, entry|
   tag = entry["tag"]
   if tag
     fail!("#{name}.tag must be a non-empty string") unless tag.is_a?(String) && !tag.empty?
-    tag_sha, tag_status = Open3.capture2("git", "ls-remote", repo, "refs/tags/#{tag}")
+    tag_sha, tag_status = Open3.capture2("git", "ls-remote", repo, "refs/tags/#{tag}", "refs/tags/#{tag}^{}")
     fail!("#{name} tag #{tag} does not exist (#{tag_status.exitstatus})") unless tag_status.success?
-    resolved = tag_sha.lines.first&.split&.first
+    resolved_line = tag_sha.lines.find { |line| line.end_with?("refs/tags/#{tag}^{}\n") } || tag_sha.lines.find { |line| line.end_with?("refs/tags/#{tag}\n") }
+    resolved = resolved_line&.split&.first
     fail!("#{name} tag #{tag} resolves to #{resolved}, expected #{sha}") unless resolved == sha
   end
 

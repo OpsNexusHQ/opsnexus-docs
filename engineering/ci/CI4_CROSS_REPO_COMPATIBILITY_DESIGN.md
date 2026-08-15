@@ -146,7 +146,7 @@ should contain, per component:
 ```yaml
 platform:
   version: baseline-2026-08
-  compatibility: supported
+  compatibility: preview
   migration_requirements: []
   release_notes: RELEASE_PRESENTATION_KIT.md
 
@@ -154,8 +154,8 @@ components:
   opsnexus-backend:
     version: v0.5.0
     commit: 8b1e3340fee81f52a88bde293dd0a05fbc132668
-    tag: v0.5.0
-    compatibility: supported
+    tag: null
+    compatibility: preview
     contract_version: 1.0.0
     migration:
       state: 004_phase5
@@ -166,7 +166,9 @@ components:
 The initial schema uses only scalar fields and a component map. It does not add
 JSON Schema, generated schemas, release automation, or dependency-graph syntax.
 The full selected values are recorded in the audit's resolved manifest table;
-the machine-readable file is intentionally deferred to implementation.
+The machine-readable file is created during CI-4 implementation; its current
+baseline uses null tags for reviewed snapshot commits that do not equal their
+repository release tags.
 
 The component owner proposes updates when a supported ref, tag, contract,
 migration, or image changes. Affected component owners review; the
@@ -336,8 +338,8 @@ failure, not a fallback.
 
 | Check | Applicable changes | Required inputs | Exact validation and success condition |
 |---|---|---|---|
-| `ci/compatibility-modules` | common, agent, backend, or manifest changes affecting them | selected common SHA/version; selected agent/backend SHAs; declared Go toolchains | Assert no sibling `replace`; resolve selected common; run `go list -m all` and `go mod verify` in agent/backend; compile/test only the affected consumer relationship. Success requires selected module identity and relationship checks; CI-1 owns repository-local quality jobs. |
-| `ci/compatibility-contract` | api, backend, dashboard, or manifest changes involving them | selected API/backend/dashboard SHAs; selected OpenAPI file; exact test fixture | Run CI-2 contract validation, then start the selected backend/database fixture and run the Section 19 HTTP/SSE assertions. Success requires all status/content/field assertions. |
+| `ci/compatibility-modules` | common, agent, backend, or manifest changes affecting them | selected common SHA/version; selected agent/backend SHAs; declared Go toolchains | In a temporary copy, resolve the selected common SHA with Go, verify `Origin.Hash`, run `go mod verify`, and test the affected consumers without a sibling replacement. CI-1 owns repository-local quality jobs. |
+| `ci/compatibility-contract` | api, backend, dashboard, or manifest changes involving them | selected API SHA, selected OpenAPI file, and the shared `contract-basic.json` | Validate the shared assertion definition against the selected authoritative OpenAPI. This is static only; it does not start Docker or make HTTP calls. Live assertions run only inside `ci/compatibility-deployment` through the reusable CI-3 workflow. |
 | `ci/compatibility-deployment` | deployment, backend, dashboard, common, or manifest changes affecting the runtime set | selected deployment/common/backend/dashboard SHAs and controlled test env | Call the reusable CI-3 workflow with those exact four inputs. Success is the existing CI-3 config/build/startup/smoke result; CI-4 owns selection, CI-3 owns deployment behavior and cleanup. |
 | `ci/compatibility-manifest` | manifest or docs/release metadata changes; also required as a dependency for any check consuming the manifest | manifest path and selected refs | Parse YAML; validate required fields, enum values, SHA format/existence, tag/SHA agreement, API contract format, migration shape, and image field rules. Success requires every referenced repository/ref to resolve. |
 
@@ -373,10 +375,13 @@ owned by CI-3 with `always()` semantics.
 
 ### Contract-covered consumer assertions
 
-The contract check uses auth-disabled CI test configuration, a disposable
-database, and a unique fixture ID such as `ci-compatibility-agent`. Requests
-have a 10-second per-request timeout and the test has a bounded 120-second
-backend readiness deadline.
+The single authoritative definition is
+`opsnexus-deployment/.github/compatibility/contract-basic.json`. The static
+contract check validates its operations, request/response schemas, fields,
+statuses, and SSE media type against the selected OpenAPI. The reusable CI-3
+workflow loads that same file for live execution with auth-disabled CI test
+configuration, a disposable database, a unique fixture ID, 10-second
+per-request timeouts, and the existing bounded readiness deadlines.
 
 1. `POST /api/v1/agents/register` with the exact required fields from
    `AgentRegistrationRequest.yaml`: `id`, `name`, `hostname`, `os`, `arch`, and

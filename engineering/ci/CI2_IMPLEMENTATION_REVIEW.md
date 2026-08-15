@@ -35,21 +35,3 @@ READY TO PUSH
 ## Remote CI correction
 
 The first remote CI run found two command-level issues: oasdiff 1.26.1 requires positional base and revision arguments, and the GitHub-hosted runner did not provide ripgrep. The API workflow now uses positional oasdiff arguments, and the docs consistency checks now use the runner-provided POSIX grep command. Both checks retain strict failure behavior.
-
-## CI-2 completion record
-
-| Repository | PR | Squash merge SHA | Final remote CI run |
-|---|---:|---|---|
-| opsnexus-dashboard | #2 | `fe5f4d309b09ed39fceac73ccdfbddfb1c562d97` | `31903569161` — green |
-| opsnexus-api | #2 | `5c25b39547d30a57f07640a79115ca5f43b9544f` | `31903737304` — green |
-| opsnexus-docs | #3 | `f692608bfe837f19625cc4f7208aee70c1fdfc43` | `31903746807` — green |
-
-Final stable checks:
-
-- Dashboard: `ci/npm-install`, `ci/web-lint`, `ci/web-build`
-- API: `ci/api-contract`, `ci/api-bundle`, `ci/api-breaking-change`
-- Docs: `ci/docs-validate`, `ci/link-check`
-
-All three PRs were squash-merged after remote CI passed. Local `main` matches `origin/main` for each repository and all three working trees are clean. No post-merge `main` workflow run was triggered because these workflows use pull-request and manual triggers only.
-
-The remaining non-blocking limitation is that direct npm tool versions are explicit while their transitive dependency graphs are not fully lockfile-pinned. This remains outside CI-2 scope. CI-3 deployment validation is the next phase.

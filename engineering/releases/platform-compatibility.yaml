@@ -1,6 +1,9 @@
 platform:
   version: baseline-2026-08
-  compatibility: supported
+  # This is an explicitly selected, pre-release compatibility baseline. The
+  # component commits below are current reviewed snapshots, not component
+  # release tags; released tags are recorded only when they resolve exactly.
+  compatibility: preview
   migration_requirements:
     - backend: 004_phase5
       evidence: public.telemetry_hourly
@@ -10,27 +13,27 @@ components:
   opsnexus-common:
     version: v0.5.0
     commit: b571c0a7ae028906d08cf108e357350dda9384d7
-    tag: v0.5.0
-    compatibility: supported
+    tag: null
+    compatibility: preview
 
   opsnexus-agent:
     version: v0.5.0
     commit: d01e925cbfe778e0c911ea7f18cce030011ef44f
-    tag: v0.5.0
-    compatibility: supported
+    tag: null
+    compatibility: preview
 
   opsnexus-api:
     version: v0.5.0
     commit: 5c25b39547d30a57f07640a79115ca5f43b9544f
-    tag: v0.5.0
-    compatibility: supported
+    tag: null
+    compatibility: preview
     contract_version: 1.0.0
 
   opsnexus-backend:
     version: v0.5.0
     commit: 8b1e3340fee81f52a88bde293dd0a05fbc132668
-    tag: v0.5.0
-    compatibility: supported
+    tag: null
+    compatibility: preview
     migration:
       state: 004_phase5
       required: true
@@ -39,24 +42,24 @@ components:
   opsnexus-dashboard:
     version: v0.5.0
     commit: fe5f4d309b09ed39fceac73ccdfbddfb1c562d97
-    tag: v0.5.0
-    compatibility: supported
+    tag: null
+    compatibility: preview
 
   opsnexus-cli:
     version: v0.5.0
     commit: d0a2e6d3fed05bcef66361112883b57fd7391d64
-    tag: v0.5.0
+    tag: null
     compatibility: informational
 
   opsnexus-deployment:
     version: v0.6.0
     commit: 339a9dee79c9f6b9a783525db5c2e6d7d34811eb
-    tag: v0.6.0
-    compatibility: supported
+    tag: null
+    compatibility: preview
     image: null
 
   opsnexus-docs:
     version: v0.5.0
     commit: f692608bfe837f19625cc4f7208aee70c1fdfc43
-    tag: v0.5.0
-    compatibility: supported
+    tag: null
+    compatibility: preview

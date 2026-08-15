@@ -195,18 +195,21 @@ information where applicable. This file is governance/release truth; it does
 not replace component `go.mod` or package versioning and does not control
 runtime dependency resolution.
 
-The first proposed supported set, using the current repository `main` SHAs, is:
+The initial reviewed baseline uses current repository `main` SHAs as a
+pre-release compatibility snapshot. Repository release metadata remains
+independent; the machine-readable manifest records `tag: null` unless a tag
+resolves exactly to the selected commit.
 
 | Component | Version/tag evidence | Main SHA | Additional manifest data |
 |---|---|---|---|
-| `opsnexus-common` | `v0.5.0` | `b571c0a7ae028906d08cf108e357350dda9384d7` | shared Go module |
-| `opsnexus-agent` | `v0.5.0` | `d01e925cbfe778e0c911ea7f18cce030011ef44f` | consumes common `v0.5.0` |
-| `opsnexus-backend` | `v0.5.0` | `8b1e3340fee81f52a88bde293dd0a05fbc132668` | migration `004_phase5` / `telemetry_hourly` |
-| `opsnexus-api` | `v0.5.0` | `5c25b39547d30a57f07640a79115ca5f43b9544f` | OpenAPI `3.1.0`, `info.version: 1.0.0` |
-| `opsnexus-dashboard` | `v0.5.0` release metadata; npm `0.0.0` | `fe5f4d309b09ed39fceac73ccdfbddfb1c562d97` | compiled API base URL |
-| `opsnexus-cli` | `v0.5.0` | `d0a2e6d3fed05bcef66361112883b57fd7391d64` | compatibility `informational` |
-| `opsnexus-deployment` | `v0.6.0` | `339a9dee79c9f6b9a783525db5c2e6d7d34811eb` | current CI-3 Compose set |
-| `opsnexus-docs` | `v0.5.0` | `f692608bfe837f19625cc4f7208aee70c1fdfc43` | compatibility/release records |
+| `opsnexus-common` | `v0.5.0` metadata; manifest `tag: null` | `b571c0a7ae028906d08cf108e357350dda9384d7` | shared Go module |
+| `opsnexus-agent` | `v0.5.0` metadata; manifest `tag: null` | `d01e925cbfe778e0c911ea7f18cce030011ef44f` | consumes common `v0.5.0` |
+| `opsnexus-backend` | `v0.5.0` metadata; manifest `tag: null` | `8b1e3340fee81f52a88bde293dd0a05fbc132668` | migration `004_phase5` / `telemetry_hourly` |
+| `opsnexus-api` | `v0.5.0` metadata; manifest `tag: null` | `5c25b39547d30a57f07640a79115ca5f43b9544f` | OpenAPI `3.1.0`, `info.version: 1.0.0` |
+| `opsnexus-dashboard` | `v0.5.0` release metadata; npm `0.0.0`; manifest `tag: null` | `fe5f4d309b09ed39fceac73ccdfbddfb1c562d97` | compiled API base URL |
+| `opsnexus-cli` | `v0.5.0` metadata; manifest `tag: null` | `d0a2e6d3fed05bcef66361112883b57fd7391d64` | compatibility `informational` |
+| `opsnexus-deployment` | `v0.6.0` metadata; manifest `tag: null` | `339a9dee79c9f6b9a783525db5c2e6d7d34811eb` | current CI-3 Compose set |
+| `opsnexus-docs` | `v0.5.0` metadata; manifest `tag: null` | `f692608bfe837f19625cc4f7208aee70c1fdfc43` | compatibility/release records |
 
 The manifest is updated when a supported component revision, API contract,
 migration state, deployment image, or coordinated platform release changes.

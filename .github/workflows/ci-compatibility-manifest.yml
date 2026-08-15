@@ -9,6 +9,11 @@ on:
       - scripts/resolve_compatibility_set.py
       - engineering/ci/**
   workflow_dispatch:
+    inputs:
+      base_manifest_sha:
+        description: Immutable opsnexus-docs commit containing the baseline manifest
+        required: true
+        type: string
 
 permissions:
   contents: read
@@ -18,19 +23,122 @@ jobs:
     name: ci/compatibility-manifest
     runs-on: ubuntu-24.04
     timeout-minutes: 10
+    outputs:
+      common_sha: ${{ steps.resolve.outputs.common_sha }}
+      agent_sha: ${{ steps.resolve.outputs.agent_sha }}
+      backend_sha: ${{ steps.resolve.outputs.backend_sha }}
+      api_sha: ${{ steps.resolve.outputs.api_sha }}
+      dashboard_sha: ${{ steps.resolve.outputs.dashboard_sha }}
+      deployment_sha: ${{ steps.resolve.outputs.deployment_sha }}
     steps:
       - name: Check out docs
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           persist-credentials: false
 
+      - name: Check out immutable base manifest
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: ${{ github.event.pull_request.base.sha || inputs.base_manifest_sha }}
+          path: ci-source/opsnexus-docs-base
+          persist-credentials: false
+
       - name: Resolve compatibility set
+        id: resolve
         run: |
-          python3 scripts/resolve_compatibility_set.py \
-            --manifest engineering/releases/platform-compatibility.yaml \
-            --pr-repo opsnexus-docs \
-            --pr-sha "${{ github.event.pull_request.head.sha || github.sha }}" \
-            --pr-manifest engineering/releases/platform-compatibility.yaml
+          base_manifest="ci-source/opsnexus-docs-base/engineering/releases/platform-compatibility.yaml"
+          if [[ -f "$base_manifest" ]]; then
+            python3 scripts/resolve_compatibility_set.py \
+              --manifest "$base_manifest" \
+              --pr-repo opsnexus-docs \
+              --pr-sha "${{ github.event.pull_request.head.sha || github.sha }}" \
+              --pr-manifest engineering/releases/platform-compatibility.yaml
+          else
+            echo "ci/compatibility-manifest: bootstrapping the first manifest; later PRs require a base manifest" >&2
+            python3 scripts/resolve_compatibility_set.py \
+              --manifest engineering/releases/platform-compatibility.yaml \
+              --pr-manifest engineering/releases/platform-compatibility.yaml
+          fi
 
       - name: Validate manifest and immutable refs
         run: ruby scripts/validate-platform-compatibility.rb
+
+  compatibility-modules:
+    name: ci/compatibility-modules
+    needs: compatibility-manifest
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Check out selected common
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          repository: OpsNexusHQ/opsnexus-common
+          ref: ${{ needs.compatibility-manifest.outputs.common_sha }}
+          path: ci-selected/opsnexus-common
+          persist-credentials: false
+      - name: Check out selected agent
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          repository: OpsNexusHQ/opsnexus-agent
+          ref: ${{ needs.compatibility-manifest.outputs.agent_sha }}
+          path: ci-selected/opsnexus-agent
+          persist-credentials: false
+      - name: Check out selected backend
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          repository: OpsNexusHQ/opsnexus-backend
+          ref: ${{ needs.compatibility-manifest.outputs.backend_sha }}
+          path: ci-selected/opsnexus-backend
+          persist-credentials: false
+      - name: Set up Go
+        uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v5.5.0
+        with:
+          go-version-file: ci-selected/opsnexus-backend/go.mod
+          check-latest: false
+      - name: Validate selected module relationships
+        env:
+          GOPROXY: https://proxy.golang.org,direct
+          GOSUMDB: sum.golang.org
+        run: |
+          python3 scripts/validate_go_module_compatibility.py \
+            --common-sha "${{ needs.compatibility-manifest.outputs.common_sha }}" \
+            --consumer ci-selected/opsnexus-agent \
+            --consumer ci-selected/opsnexus-backend
+
+  compatibility-contract:
+    name: ci/compatibility-contract
+    needs: compatibility-manifest
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Check out selected deployment
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          repository: OpsNexusHQ/opsnexus-deployment
+          ref: ${{ needs.compatibility-manifest.outputs.deployment_sha }}
+          path: ci-selected/opsnexus-deployment
+          persist-credentials: false
+      - name: Check out selected API
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          repository: OpsNexusHQ/opsnexus-api
+          ref: ${{ needs.compatibility-manifest.outputs.api_sha }}
+          path: ci-selected/opsnexus-api
+          persist-credentials: false
+      - name: Validate selected contract assertions
+        run: |
+          bash ci-selected/opsnexus-deployment/.github/scripts/validate-contract-basic.sh \
+            ci-selected/opsnexus-deployment/.github/compatibility/contract-basic.json \
+            ci-selected/opsnexus-api/api/openapi.yaml
+
+  compatibility-deployment:
+    name: ci/compatibility-deployment
+    needs: compatibility-manifest
+    uses: OpsNexusHQ/opsnexus-deployment/.github/workflows/ci-compatibility-deployment.yml@6deac3e3fc049e4d65371d02cf0d0ebab838e1fb
+    with:
+      pr_repo: opsnexus-docs
+      pr_sha: ${{ github.event.pull_request.head.sha || github.sha }}
+      base_manifest_sha: ${{ github.event.pull_request.base.sha || inputs.base_manifest_sha }}
+      manifest_sha: ${{ github.event.pull_request.head.sha || github.sha }}
+      run_contract_assertions: true
+      contract_profile: contract-basic
