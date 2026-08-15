@@ -259,3 +259,8 @@ OpenAPI, Docker, migration, dependency, or runtime files:
 The corrective local classification is:
 
 READY FOR CI-4 IMPLEMENTATION REVIEW
+
+The first manifest is a documented bootstrap case because the current main
+branch predates the manifest. The docs workflow validates the candidate as the
+initial set; subsequent component and manifest PRs require the immutable base
+manifest file and never fall back to a moving branch.
