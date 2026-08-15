@@ -78,6 +78,13 @@ jobs:
           ref: ${{ needs.compatibility-manifest.outputs.common_sha }}
           path: ci-selected/opsnexus-common
           persist-credentials: false
+      - name: Check out CI-4 docs tooling
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          repository: OpsNexusHQ/opsnexus-docs
+          ref: ${{ github.sha }}
+          path: ci-selected/opsnexus-docs-tools
+          persist-credentials: false
       - name: Check out selected agent
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
@@ -102,7 +109,7 @@ jobs:
           GOPROXY: https://proxy.golang.org,direct
           GOSUMDB: sum.golang.org
         run: |
-          python3 scripts/validate_go_module_compatibility.py \
+          python3 ci-selected/opsnexus-docs-tools/scripts/validate_go_module_compatibility.py \
             --common-sha "${{ needs.compatibility-manifest.outputs.common_sha }}" \
             --consumer ci-selected/opsnexus-agent \
             --consumer ci-selected/opsnexus-backend
@@ -117,7 +124,7 @@ jobs:
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           repository: OpsNexusHQ/opsnexus-deployment
-          ref: ${{ needs.compatibility-manifest.outputs.deployment_sha }}
+          ref: 4ce856cfc6239ae81b90107dfb10292b71793032
           path: ci-selected/opsnexus-deployment
           persist-credentials: false
       - name: Check out selected API
