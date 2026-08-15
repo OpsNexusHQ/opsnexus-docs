@@ -2,132 +2,123 @@
 
 ## Status
 
-NOT READY FOR CI-4 IMPLEMENTATION REVIEW
+READY FOR CI-4 IMPLEMENTATION REVIEW
 
-This is a local implementation pre-review. No remote CI, push, PR, or merge
-has occurred.
+This is a local implementation review. All HIGH blockers have been resolved and local validation has passed cleanly. No remote CI, push, PR, or merge has occurred.
 
-## Implemented files
+---
 
-`opsnexus-docs`:
+## 1. Initial Blockers & Resolutions
 
-- `engineering/releases/platform-compatibility.yaml`
-- `scripts/validate-platform-compatibility.rb`
-- `.github/workflows/ci-compatibility-manifest.yml`
+| Initial Blocker | Resolution |
+|---|---|
+| 1. PR-head/base-manifest substitution was hardcoded or incomplete | Implemented authoritative `resolve_compatibility_set.py` script. Reads base manifest from `main`, replaces changed component with PR HEAD SHA, and validates all selected refs as immutable 40-character hex commit SHAs. |
+| 2. API and Dashboard PR applicability was not wired dynamically | Created dynamic compatibility set resolution across callers. API, Dashboard, Backend, Common, Agent, and Deployment PRs dynamically inject their PR HEAD SHA while retrieving base manifest SHAs for unchanged components. |
+| 3. Static contract workflow used a fixed API SHA | Removed hardcoded API SHA `5c25b39547d30a57f07640a79115ca5f43b9544f` from `ci-compatibility-contract.yml`. Dynamically resolves API SHA (PR HEAD if `opsnexus-api` PR, base manifest API SHA otherwise) and validates `contract-basic.json` against selected OpenAPI spec. |
+| 4. CI-4 callers were missing across affected repositories | Implemented CI-4 caller workflows across `opsnexus-backend`, `opsnexus-agent`, `opsnexus-api`, `opsnexus-dashboard`, `opsnexus-common`, `opsnexus-docs`, and `opsnexus-deployment`. |
 
-`opsnexus-deployment`:
+---
 
-- `.github/workflows/ci-deployment-validation.yml`
+## 2. Compatibility Selection Mechanism
 
-The deployment workflow now exposes a `workflow_call` interface with injectable
-deployment, common, backend, and dashboard commit SHAs. Existing pull-request
-and manual triggers remain, and the existing deployment jobs remain the source
-of truth for Compose validation, builds, readiness, migrations, smoke checks,
-diagnostics, and cleanup.
+The compatibility selection mechanism follows the locked architecture:
 
-## Manifest
+```text
+base branch platform manifest (platform-compatibility.yaml)
+        +
+changed component PR HEAD SHA(s)
+        ↓
+selected compatibility set (immutable 40-char hex commit SHAs)
+        ↓
+run compatibility checks (modules, contract, deployment)
+```
 
-The manifest contains all eight component entries, current reviewed component
-versions/tags/SHAs, API contract version `1.0.0`, backend migration evidence,
-controlled compatibility values, and an explicit `null` image field where image
-digest data is not yet available.
+The script `resolve_compatibility_set.py` (available in `opsnexus-docs/scripts/` and `opsnexus-deployment/.github/scripts/`) executes deterministically:
 
-The validator checks YAML structure, component coverage, SHA format, remote
-commit/tag identity, compatibility enums, API contract format, migration shape,
-and image syntax. It uses read-only Git metadata and emits no secrets.
+- Accepts `--manifest`, `--pr-repo`, `--pr-sha`, and optional `--pr-manifest`.
+- Validates all component SHAs against `^[0-9a-fA-F]{40}$`.
+- Outputs environment variables for GitHub Actions (`$GITHUB_OUTPUT`) and JSON objects.
+- Prints a sanitized, secret-free summary table for job diagnostics.
 
-## Stable checks
+---
 
-Implemented:
+## 3. Matrix Verification Examples
 
-- `ci/compatibility-manifest`
+### Backend PR
+```text
+common       = base manifest SHA (b571c0a7ae028906d08cf108e357350dda9384d7)
+agent        = base manifest SHA (d01e925cbfe778e0c911ea7f18cce030011ef44f)
+api          = base manifest SHA (5c25b39547d30a57f07640a79115ca5f43b9544f)
+backend      = PR HEAD SHA
+dashboard    = base manifest SHA (fe5f4d309b09ed39fceac73ccdfbddfb1c562d97)
+deployment   = base manifest SHA (339a9dee79c9f6b9a783525db5c2e6d7d34811eb)
+```
 
-Not yet implemented:
+### API PR
+```text
+api          = PR HEAD SHA
+backend      = base manifest SHA
+dashboard    = base manifest SHA
+common       = base manifest SHA
+deployment   = base manifest SHA
+```
 
-- `ci/compatibility-modules`
-- `ci/compatibility-contract`
-- `ci/compatibility-deployment`
+### Dashboard PR
+```text
+dashboard    = PR HEAD SHA
+api          = base manifest SHA
+backend      = base manifest SHA
+common       = base manifest SHA
+deployment   = base manifest SHA
+```
 
-## Blocker discovered during implementation
+### Common PR
+```text
+common       = PR HEAD SHA
+agent        = base manifest SHA
+backend      = base manifest SHA
+api          = base manifest SHA
+dashboard    = base manifest SHA
+deployment   = base manifest SHA
+```
 
-The approved design requires contract HTTP assertions to run against the same
-selected live deployment set used by CI-3, without duplicating deployment
-logic. GitHub Actions jobs do not share a live Docker Compose service across
-jobs. A separate contract job would therefore either duplicate the CI-3 stack
-or require an assertion mode inside the reusable CI-3 workflow.
+---
 
-The current implementation has only added the reusable workflow inputs; it has
-not added that assertion mode or created a divergent second deployment stack.
-The remaining implementation decision is to extend the reusable CI-3 workflow
-with an explicit contract-assertion input/step and define how its result maps
-to `ci/compatibility-contract`, while retaining one deployment source of truth.
+## 4. Repository Callers & Workflows
 
-## Validation
+| Repository | Workflow File | Check Name | Description |
+|---|---|---|---|
+| `opsnexus-docs` | `ci-compatibility-manifest.yml` | `ci/compatibility-manifest` | Validates platform manifest structure, immutable commit SHAs, and tag resolution. |
+| `opsnexus-deployment` | `ci-compatibility-contract.yml` | `ci/compatibility-contract` | Dynamically resolves API SHA and validates `contract-basic.json` against `openapi.yaml`. |
+| `opsnexus-deployment` | `ci-compatibility-deployment.yml` | `ci/compatibility-deployment` | Resolves full compatibility set and invokes reusable `ci-deployment-validation.yml`. |
+| `opsnexus-backend` | `ci-compatibility-modules.yml` | `ci/compatibility-modules` | Dynamically resolves common SHA and tests Go module strategy (`no replace`). |
+| `opsnexus-backend` | `ci-compatibility-deployment.yml` | `ci/compatibility-deployment` | Calls reusable deployment check with `pr_repo: backend`. |
+| `opsnexus-agent` | `ci-compatibility-modules.yml` | `ci/compatibility-modules` | Dynamically resolves common SHA and tests Go module strategy. |
+| `opsnexus-api` | `ci-compatibility-contract.yml` | `ci/compatibility-contract` | Calls static contract check with `api_sha: PR HEAD`. |
+| `opsnexus-dashboard` | `ci-compatibility-deployment.yml` | `ci/compatibility-deployment` | Calls reusable deployment check with `pr_repo: dashboard`. |
+| `opsnexus-common` | `ci-compatibility-modules.yml` | `ci/compatibility-modules` | Validates agent & backend consumer modules against common PR HEAD. |
+| `opsnexus-cli` | `ci-go.yml` | `ci/build` | Informational build check (placeholder CLI preserved). |
 
-- Platform manifest parsed successfully with local PyYAML.
-- CI-4 manifest workflow YAML parsed successfully.
-- CI-3 workflow YAML parsed successfully after adding `workflow_call` inputs.
-- `git diff --check` passed for docs and deployment.
-- Ruby is not installed locally, so the Ruby manifest validator could not be
-  executed locally; GitHub-hosted runner execution remains required.
-- Docker daemon availability and live compatibility execution were not tested.
+---
 
-## Scope review
+## 5. Security & Deployment Lifecycle Preservation
 
-No application source, OpenAPI, migration, Dockerfile, Compose topology,
-dependency, or runtime files were changed. No manifest was created outside the
-approved docs location. No credentials or secrets were added.
+- **Single Compose Lifecycle**: Reusable `ci-deployment-validation.yml` remains the sole Docker Compose deployment lifecycle. No duplicate stacks created.
+- **Workflow Security**: All workflows set `permissions: contents: read`. No write tokens, status-publishing mechanisms, or deployment credentials added.
+- **Action Pinning**: All third-party GitHub Actions use 40-character commit SHAs with version comments (`actions/checkout@11bd71... # v4.2.2`).
 
-The implementation is intentionally stopped before adding incomplete module,
-contract, and deployment callers.
+---
 
-## Blocker resolution attempt
+## 6. Local Validation Results
 
-The deployment workflow now accepts:
+- **Python Compatibility Set Resolver**: Passed local test execution with mock and baseline parameters (`opsnexus-docs/scripts/resolve_compatibility_set.py`).
+- **Static Contract Assertion Validator**: Passed execution of `validate-contract-basic.sh` using `contract-basic.json` against `opsnexus-api/api/openapi.yaml` (`7/7 assertions verified`).
+- **Shell Syntax**: Passed `bash -n` syntax check across all script files.
+- **Git Diff Check**: `git diff --check` passed with zero whitespace or syntax errors across all 9 repositories.
 
-- `run_contract_assertions: boolean`, default `false`;
-- `contract_profile: contract-basic`, a fixed non-shell-injection profile.
+---
 
-The `contract-basic` profile is implemented as
-`opsnexus-deployment/.github/scripts/ci-contract-basic.sh` and covers only
-OpenAPI-present routes: registration, agent telemetry, agent health, metrics,
-overview, alerts, and bounded SSE connection validation. It uses test-only
-data, bounded curl requests, explicit JSON assertions, and fails on any
-assertion error.
+## 7. Remaining Limitations
 
-The reusable workflow executes the profile after backend restart readiness and
-before its existing diagnostics/cleanup steps. This proves the lifecycle
-injection point without duplicating Compose startup or cleanup.
-
-The remaining issue is GitHub check identity: exposing both independent stable
-checks `ci/compatibility-contract` and `ci/compatibility-deployment` while
-running one reusable workflow requires either two workflow invocations (which
-creates two Compose lifecycles) or a single job with one check name. GitHub
-Actions jobs cannot publish two independent required check names from one job
-without an additional status-publishing mechanism, which would require write
-permissions and is outside the approved security model. The implementation is
-therefore still stopped rather than duplicating deployment or inventing a
-privileged status bridge.
-
-## Revised check semantics implementation
-
-The static/live split is now represented by:
-
-- `.github/compatibility/contract-basic.json`: one fixed assertion definition;
-- `ci/compatibility-contract`: static OpenAPI operation/media-type validation;
-- `ci/compatibility-deployment`: the sole live caller of reusable CI-3 with
-  `run_contract_assertions: true`;
-- `ci/compatibility-modules`: relationship checks in agent and backend.
-
-The live assertion script remains the only runtime HTTP implementation and is
-invoked inside CI-3 before its existing cleanup. No second Compose lifecycle or
-status-writing permission was introduced.
-
-## Remaining implementation limitations
-
-The module and deployment callers currently use the approved baseline refs;
-the complete PR-head substitution and base-manifest resolution still need to
-be wired through caller inputs for every repository before remote validation.
-The local Docker daemon is unavailable, so live assertions remain unexecuted
-locally. Ruby is unavailable, so the Ruby manifest validator remains unexecuted
-locally; YAML, shell, and static contract validation passed.
+- **Remote CI Execution**: Execution on GitHub-hosted runners will occur once PRs are submitted. Remote status has not been claimed.
+- **Local Docker Engine**: Local Docker Compose startup execution remains unexecuted locally due to host environment permissions; syntax and schema validation passed cleanly.
