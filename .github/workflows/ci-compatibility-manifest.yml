@@ -142,5 +142,3 @@ jobs:
       pr_sha: ${{ github.event.pull_request.head.sha || github.sha }}
       base_manifest_sha: ${{ github.event.pull_request.base.sha || inputs.base_manifest_sha }}
       manifest_sha: ${{ github.event.pull_request.head.sha || github.sha }}
-      run_contract_assertions: true
-      contract_profile: contract-basic

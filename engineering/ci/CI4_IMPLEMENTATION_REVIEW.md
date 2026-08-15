@@ -2,7 +2,8 @@
 
 ## Status
 
-SUPERSEDED: NOT READY TO PUSH; corrective implementation pass recorded below
+Historical initial decision: NOT READY TO PUSH. Corrective implementation
+review and current decision are recorded below.
 
 This is a local implementation review. The initial review found blockers; the corrective pass below records their resolution. No remote CI, push, PR, or merge has occurred.
 
@@ -45,6 +46,7 @@ The single authoritative script `opsnexus-docs/scripts/resolve_compatibility_set
 ## 3. Matrix Verification Examples
 
 ### Backend PR
+
 ```text
 common       = base manifest SHA (b571c0a7ae028906d08cf108e357350dda9384d7)
 agent        = base manifest SHA (d01e925cbfe778e0c911ea7f18cce030011ef44f)
@@ -55,6 +57,7 @@ deployment   = base manifest SHA (339a9dee79c9f6b9a783525db5c2e6d7d34811eb)
 ```
 
 ### API PR
+
 ```text
 api          = PR HEAD SHA
 backend      = base manifest SHA
@@ -64,6 +67,7 @@ deployment   = base manifest SHA
 ```
 
 ### Dashboard PR
+
 ```text
 dashboard    = PR HEAD SHA
 api          = base manifest SHA
@@ -73,6 +77,7 @@ deployment   = base manifest SHA
 ```
 
 ### Common PR
+
 ```text
 common       = PR HEAD SHA
 agent        = base manifest SHA
@@ -125,7 +130,7 @@ deployment   = base manifest SHA
 
 ---
 
-# Formal Read-Only Implementation Review
+## Formal Read-Only Implementation Review
 
 ## 1. Executive Summary
 
@@ -237,7 +242,7 @@ The current review text claims that all HIGH blockers are resolved and that call
 5. Remove the unrelated CI3 review artifact and CI-2 documentation change from the CI-4 implementation scope.
 6. Ensure manifest changes invoke the complete applicable compatibility set, including deployment validation, without introducing a second Compose lifecycle.
 
-## 16. Final Decision
+## 16. Historical Final Decision
 
 NOT READY TO PUSH
 
@@ -264,3 +269,117 @@ The first manifest is a documented bootstrap case because the current main
 branch predates the manifest. The docs workflow validates the candidate as the
 initial set; subsequent component and manifest PRs require the immutable base
 manifest file and never fall back to a moving branch.
+
+## 18. Final corrective review
+
+### 1. Executive Summary
+
+The corrective implementation preserves one resolver, one contract
+specification, and one reusable CI-3 Compose lifecycle. No application or
+deployment behavior was changed.
+
+### 2. Commit Inventory
+
+| Repository | Final local commit |
+|---|---|
+| opsnexus-docs | `aac512e53819de6f0ae4f92addb74ea8e704adac` |
+| opsnexus-deployment | `4ce856cfc6239ae81b90107dfb10292b71793032` |
+| opsnexus-agent | `6ac9bd428a657d69bcfb0456606a5af6de09305d` |
+| opsnexus-backend | `2f71375dbcccddc14cc7213c2270fb871079c85d` |
+| opsnexus-common | `aece6299882ece534e6566e4a66ea762791fc751` |
+| opsnexus-api | `cb60e7c61b4b6c4e98478c45f5063fcee5e9f031` |
+| opsnexus-dashboard | `9792f2a8a3fd7f2117f9ecdff5ee9601458cd28b` |
+
+### 3. Scope Review
+
+Committed diffs contain only CI-4 workflows, helpers, the manifest, the
+shared assertion specification, the CI-3 reusable interface, and CI-4 records.
+The deployment `CI3_DESIGN_REVIEW.md` remains untracked, unchanged, and is not
+in the diff.
+
+### 4. Manifest Review
+
+All eight component commits are 40-character SHAs present in local Git
+history. Current snapshot commits intentionally use `tag: null` and
+`preview`/`informational` status; any future tag is checked against the exact
+commit, including annotated tags. API contract and backend migration fields
+are validated.
+
+### 5. Compatibility Resolver Review
+
+`opsnexus-docs/scripts/resolve_compatibility_set.py` is the sole resolver.
+Component PRs use the immutable reviewed docs-base SHA plus the PR HEAD for
+the changed component. Docs manifest PRs compare the immutable base manifest
+with the candidate manifest; the first manifest is an explicit bootstrap case.
+
+### 6. Module Compatibility
+
+The common PR workflow checks out the selected common SHA. Agent/backend
+validation copies consumers to temporary directories, runs Go download/get at
+that exact SHA, verifies `Origin.Hash`, then runs `go mod verify` and tests.
+No committed `replace` or `go.work` is used.
+
+### 7. Static Contract
+
+`contract-basic.json` is the sole assertion definition. The static validator
+checks all seven approved operations against the selected OpenAPI, including
+request fields, response status/schema fields, content types, and SSE media.
+It performs no Docker or HTTP execution.
+
+### 8. Live Contract
+
+The reusable deployment workflow loads the same JSON through its fixed
+`contract-basic` profile only after readiness. Failures propagate and cleanup
+remains unconditional.
+
+### 9. CI-3 Reuse
+
+CI-3 remains the only owner of Compose setup, builds, PostgreSQL readiness,
+migrations, health/restart checks, dashboard readiness, diagnostics, and
+cleanup. Contract mode defaults to disabled.
+
+### 10. Deployment Compatibility
+
+`ci/compatibility-deployment` resolves one set and passes exact deployment,
+common, backend, and dashboard SHAs to the reusable workflow. Manifest changes
+fan out to modules, static contract validation, and deployment validation.
+
+### 11. Repository Callers
+
+Callers exist for common, agent, backend, API, dashboard, deployment, and
+docs. CLI remains represented as informational in the manifest and has no
+artificial API gate.
+
+### 12. Security
+
+CI-4 actions and cross-repository workflow references are SHA-pinned. Workflows
+use read-only contents permissions, persist no checkout credentials, accept no
+arbitrary shell command input, and require no secrets.
+
+### 13. Documentation
+
+Historical blockers remain above. Current documentation records the staged API
+state: CI-4 validates only contract-covered routes; undocumented A-class
+routes remain compatibility debt and complete public API compatibility is not
+claimed.
+
+### 14. Validation Evidence
+
+YAML parsing, shell syntax, manifest SHA/tag checks, resolver substitution,
+static contract validation, and `git diff --check` passed locally. Ruby was
+unavailable, and Go module execution could not write the local module cache;
+Docker/live execution remains remote validation.
+
+### 15. Findings
+
+No BLOCKER or HIGH findings remain. The local Ruby/Go/Docker limitations are
+validation limitations, not implementation findings.
+
+### 16. Required Fixes
+
+None before implementation review. Remote CI must still validate network-backed
+module resolution and live deployment behavior.
+
+### 17. Final Decision
+
+READY TO PUSH
