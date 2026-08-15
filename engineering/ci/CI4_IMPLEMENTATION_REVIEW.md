@@ -272,7 +272,7 @@ manifest file and never fall back to a moving branch.
 
 ## 18. Final corrective review
 
-### 1. Executive Summary
+### Corrective Executive Summary
 
 The corrective implementation preserves one resolver, one contract
 specification, and one reusable CI-3 Compose lifecycle. No application or

@@ -42,8 +42,8 @@ components.each do |name, entry|
   fail!("#{name}.compatibility is invalid") unless COMPATIBILITY_VALUES.include?(entry["compatibility"])
 
   repo = "https://github.com/#{REPOSITORY_OWNER}/#{name}.git"
-  remote_sha, remote_status = Open3.capture2("git", "ls-remote", repo, sha)
-  fail!("#{name} commit #{sha} does not exist (#{remote_status.exitstatus})") unless remote_status.success? && remote_sha.lines.any? { |line| line.start_with?(sha) }
+  remote_refs, remote_status = Open3.capture2("git", "ls-remote", repo)
+  fail!("#{name} commit #{sha} does not exist (#{remote_status.exitstatus})") unless remote_status.success? && remote_refs.lines.any? { |line| line.start_with?(sha) }
 
   tag = entry["tag"]
   if tag
