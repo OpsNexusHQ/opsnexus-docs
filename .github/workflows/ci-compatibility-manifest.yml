@@ -143,7 +143,7 @@ jobs:
   compatibility-deployment:
     name: ci/compatibility-deployment
     needs: compatibility-manifest
-    uses: OpsNexusHQ/opsnexus-deployment/.github/workflows/ci-compatibility-deployment.yml@6150f2454d0b3a425874e9571924bb586167830d
+    uses: OpsNexusHQ/opsnexus-deployment/.github/workflows/ci-compatibility-deployment.yml@7fa0ed39de85d28c2104ed71c9ed3ed51c1ff148
     with:
       pr_repo: opsnexus-docs
       pr_sha: ${{ github.event.pull_request.head.sha || github.sha }}
