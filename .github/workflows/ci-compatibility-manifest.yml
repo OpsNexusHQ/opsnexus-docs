@@ -143,7 +143,7 @@ jobs:
   compatibility-deployment:
     name: ci/compatibility-deployment
     needs: compatibility-manifest
-    uses: OpsNexusHQ/opsnexus-deployment/.github/workflows/ci-compatibility-deployment.yml@d1bf3cf34358cc6f85420158afdd6ddde255d29b
+    uses: OpsNexusHQ/opsnexus-deployment/.github/workflows/ci-compatibility-deployment.yml@d1bf3cf34358cc6f85420158afdd6ddde255d29b # CI-4 lifecycle + bounded contract assertions
     with:
       pr_repo: opsnexus-docs
       pr_sha: ${{ github.event.pull_request.head.sha || github.sha }}
