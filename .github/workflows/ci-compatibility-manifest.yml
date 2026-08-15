@@ -52,12 +52,14 @@ jobs:
               --manifest "$base_manifest" \
               --pr-repo opsnexus-docs \
               --pr-sha "${{ github.event.pull_request.head.sha || github.sha }}" \
-              --pr-manifest engineering/releases/platform-compatibility.yaml
+              --pr-manifest engineering/releases/platform-compatibility.yaml \
+              --github-output "$GITHUB_OUTPUT"
           else
             echo "ci/compatibility-manifest: bootstrapping the first manifest; later PRs require a base manifest" >&2
             python3 scripts/resolve_compatibility_set.py \
               --manifest engineering/releases/platform-compatibility.yaml \
-              --pr-manifest engineering/releases/platform-compatibility.yaml
+              --pr-manifest engineering/releases/platform-compatibility.yaml \
+              --github-output "$GITHUB_OUTPUT"
           fi
 
       - name: Validate manifest and immutable refs
