@@ -1,0 +1,47 @@
+name: Documentation CI
+
+on:
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  docs-validate:
+    name: ci/docs-validate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.23.2
+      - name: Validate Markdown
+        run: npx --yes markdownlint-cli2@0.23.2 "**/*.md" "#node_modules" "#dist" "#vendor"
+      - name: Validate repository references
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f COMPATIBILITY.md
+          test -f engineering/audits/2026-08-engineering-audit.md
+          test -f engineering/audits/2026-08-p0-verification.md
+          rg -q 'opsnexus-dashboard' .
+          rg -q 'opsnexus-api' .
+          rg -q 'opsnexus-docs' .
+          rg -q 'v0\.5\.0' COMPATIBILITY.md
+
+  link-check:
+    name: ci/link-check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Check Markdown links
+        uses: lycheeverse/lychee-action@v2
+        with:
+          lycheeVersion: v0.20.1
+          args: --verbose --no-progress --max-retries 2 --retry-wait-time 2 '**/*.md'
